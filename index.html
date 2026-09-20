@@ -198,7 +198,7 @@ function add(text,who,src=""){
 }
 function ask(q){add(q,"user");setTimeout(()=>{let a=getAnswer(q);add(a.text,"bot",a.src)},100)}
 function send(){const i=document.getElementById("q");const q=i.value.trim();if(q){i.value="";ask(q)}}
-add("Xin chào! 👋\nMình là Trợ lý Nội quy THPT Lê Thánh Tôn.\n\nBạn có thể hỏi bằng cách nói tự nhiên, ví dụ:\n• “Em nghỉ 3 ngày liên tục thì cần gì?”\n• “Có được đem điện thoại vào trường không?”\n• “Nam có được vào phòng nữ khi bán trú không?”\n• “Băng vệ sinh phải bỏ ở đâu?”\n\nMình sẽ tra trong toàn bộ nội dung nội quy đã được cung cấp.","bot");
+add("Xin chào! 👋\nMình là Trợ lý Nội quy THPT Lê Thánh Tôn.\n\nBạn có thể hỏi bằng cách nói tự nhiên, ví dụ:\n• “Em nghỉ 3 ngày liên tục thì cần gì?”\n• “Có được đem điện thoại vào trường không?”\n• “Băng vệ sinh phải bỏ ở đâu?”\n\nMình sẽ tra trong toàn bộ nội dung nội quy đã được cung cấp.","bot");
 </script>
 </body>
 </html>
