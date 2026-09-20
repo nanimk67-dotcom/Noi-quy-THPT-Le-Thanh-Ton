@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Trợ lý nội quy THPT Lê Thánh Tôn</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#eef3f8;font-family:Arial,sans-serif;color:#172033}
+.app{max-width:920px;height:100vh;margin:auto;background:#fff;display:flex;flex-direction:column;box-shadow:0 0 30px #0002}
+header{background:linear-gradient(135deg,#1266d6,#1647a5);color:#fff;padding:18px 20px}
+header h1{margin:0;font-size:22px}header p{margin:6px 0 0;font-size:13px;opacity:.92}
+#chat{flex:1;overflow-y:auto;padding:18px;background:#f6f8fb}
+.msg{display:flex;margin:10px 0}.user{justify-content:flex-end}
+.bubble{max-width:86%;padding:12px 15px;border-radius:17px;line-height:1.55;white-space:pre-wrap}
+.bot .bubble{background:#fff;border:1px solid #e1e7ef;border-bottom-left-radius:5px}
+.user .bubble{background:#1667d9;color:#fff;border-bottom-right-radius:5px}
+.sources{font-size:11px;color:#657184;margin-top:6px}
+.quick{display:flex;gap:8px;overflow-x:auto;padding:9px 12px;border-top:1px solid #e2e6eb;background:#fff}
+.quick button{white-space:nowrap;border:1px solid #cbd7e6;background:#f5f8fc;border-radius:18px;padding:8px 12px;cursor:pointer}
+.input{display:flex;gap:8px;padding:11px;background:#fff;border-top:1px solid #ddd}
+input{flex:1;border:1px solid #c9d3e0;border-radius:24px;padding:12px 15px;font-size:15px;outline:0}
+input:focus{border-color:#1769d2}.send{border:0;background:#1769d2;color:white;border-radius:24px;padding:0 20px;font-weight:bold}
+.note{text-align:center;font-size:11px;color:#6d7785;padding:5px 10px 9px;background:#fff}
+</style>
+</head>
+<body>
+<div class="app">
+<header><h1>🤖 Trợ lý Nội quy THPT Lê Thánh Tôn</h1><p>Tra cứu nội quy học sinh • bán trú • nhà vệ sinh</p></header>
+<div id="chat"></div>
+<div class="quick">
+<button onclick="ask('Học sinh có được dùng điện thoại không?')">📱 Điện thoại</button>
+<button onclick="ask('Nếu nghỉ học thì phải làm gì?')">📅 Nghỉ học</button>
+<button onclick="ask('Quy định về đồng phục và tóc?')">👕 Trang phục</button>
+<button onclick="ask('Bán trú có được ra khỏi trường không?')">🏫 Bán trú</button>
+<button onclick="ask('Nhà vệ sinh có quy định gì?')">🚻 Nhà vệ sinh</button>
+</div>
+<div class="input"><input id="q" placeholder="Hỏi bất kỳ điều gì trong nội quy..." onkeydown="if(event.key==='Enter')send()"><button class="send" onclick="send()">Gửi</button></div>
+<div class="note">Chatbot chỉ sử dụng nội dung từ các trang nội quy bạn đã cung cấp.</div>
+</div>
+
+<script>
+const KB=[
+["Nội quy chung","Mục 1","Học sinh có trách nhiệm thực hiện đúng nội quy của Trường THPT Lê Thánh Tôn.","trách nhiệm thực hiện nội quy quy định chung"],
+["Nội quy chung","Mục 2","Phải có mặt đúng giờ quy định. Thứ Hai buổi sáng: 6h45; buổi chiều: 13h (theo phần giờ đã được ghi chú trên bản nội quy). Các ngày còn lại buổi sáng: 6h55; buổi chiều: 13h.","giờ vào học đến trường đúng giờ thứ hai sáng chiều các ngày còn lại"],
+["Nội quy chung","Mục 3","Học sinh phải học đầy đủ các môn học chính khóa, môn học tích hợp, lựa chọn, tự chọn, chuyên đề, hướng nghiệp.","học đầy đủ môn chính khóa tích hợp lựa chọn tự chọn chuyên đề hướng nghiệp"],
+["Nội quy chung","Mục 4","Chấp hành sự phân công của lãnh đạo trường, giáo viên chủ nhiệm, giáo viên, giám thị, nhân viên.","phân công lãnh đạo giáo viên chủ nhiệm giám thị nhân viên"],
+["Nội quy chung","Mục 5","Có thái độ và hành vi đúng mực với thầy cô, nhân viên và mọi người.","thái độ hành vi đúng mực thầy cô nhân viên"],
+["Nội quy chung","Mục 6","Có ý thức thực hành tiết kiệm, giữ gìn của công, vệ sinh, tài sản nhà trường.","tiết kiệm giữ gìn của công vệ sinh tài sản"],
+["Nội quy chung","Mục 7","Chấp hành tốt Luật An toàn giao thông và không vi phạm pháp luật.","an toàn giao thông pháp luật"],
+["Nội quy chung","Mục 8","Hoàn thành học phí theo quy định.","học phí"],
+["Chuyên cần","Mục 9","Phải đến trường đúng giờ, học đầy đủ các tiết học.","đến trường đúng giờ đầy đủ tiết học chuyên cần"],
+["Chuyên cần","Mục 10","Khi nghỉ học phải có đơn xin phép có xác nhận của cha mẹ hoặc xin phép trực tuyến trên hệ thống.","nghỉ học đơn xin phép xác nhận cha mẹ trực tuyến hệ thống"],
+["Chuyên cần","Mục 11","Nghỉ học 03 ngày liên tục phải có xác nhận y tế hoặc cha mẹ đến trường xin phép.","nghỉ ba ngày 3 ngày liên tục xác nhận y tế cha mẹ"],
+["Chuyên cần","Mục 12","Đi học trễ hoặc trốn tiết sẽ bị xử lý theo từng mức độ.","đi trễ đi học muộn trốn tiết xử lý"],
+["Chuyên cần","Mục 13","Không được ra khỏi trường trong giờ học nếu không được phép.","ra khỏi trường giờ học được phép"],
+["Chuyên cần","Mục 14","Không đến trường quá sớm trừ khi có hoạt động theo kế hoạch.","đến trường quá sớm hoạt động kế hoạch"],
+["Chuyên cần","Mục 15","Không ra về khi chưa hết buổi học nếu không có lý do chính đáng.","ra về sớm chưa hết buổi lý do chính đáng"],
+["Trang phục – tác phong","Mục 16","Mặc đồng phục đúng quy định, mang phù hiệu, bảng tên được may liền vào bên trái áo đồng phục. Mang giày hoặc sandal có quai hậu.","đồng phục phù hiệu bảng tên áo giày sandal quai hậu"],
+["Trang phục – tác phong","Mục 17","Mặc đồng phục thể dục đúng quy định trong tiết học giáo dục thể chất, giáo dục quốc phòng và an ninh.","đồng phục thể dục thể chất quốc phòng an ninh"],
+["Trang phục – tác phong","Mục 18","Đầu tóc gọn gàng, không nhuộm tóc, không cắt kiểu phản cảm.","tóc kiểu tóc nhuộm tóc gọn gàng"],
+["Trang phục – tác phong","Mục 19","Không mang giày cao gót, dép lê, không đeo trang sức, trang điểm.","giày cao gót dép lê trang sức trang điểm"],
+["Ứng xử – giao tiếp","Mục 20","Lễ phép với thầy cô giáo, cán bộ, nhân viên nhà trường.","lễ phép thầy cô cán bộ nhân viên"],
+["Ứng xử – giao tiếp","Mục 21","Thân thiện với bạn bè, giúp đỡ trong học tập và sinh hoạt.","bạn bè thân thiện giúp đỡ học tập sinh hoạt"],
+["Ứng xử – giao tiếp","Mục 22","Không gây mất trật tự, đánh nhau, gây gổ hay xúc phạm người khác.","mất trật tự đánh nhau gây gổ xúc phạm"],
+["Ứng xử – giao tiếp","Mục 23","Không nói tục, chửi thề hay gây mất đoàn kết.","nói tục chửi thề mất đoàn kết"],
+["Ứng xử – giao tiếp","Mục 24","Không phát tán thông tin sai sự thật trên mạng xã hội.","mạng xã hội thông tin sai sự thật phát tán"],
+["Ứng xử – giao tiếp","Mục 25","Không bình luận phản cảm trên mạng xã hội.","bình luận phản cảm mạng xã hội"],
+["Ứng xử – giao tiếp","Mục 26","Không chụp hình, quay phim người khác khi chưa được đồng ý.","chụp hình quay phim người khác đồng ý"],
+["Tài sản","Mục 27","Bảo vệ tài sản, thiết bị, cơ sở vật chất nhà trường.","tài sản thiết bị cơ sở vật chất bảo vệ"],
+["Tài sản","Mục 28","Không vẽ bậy, viết bậy, phá hoại tài sản.","vẽ bậy viết bậy phá hoại"],
+["Tài sản","Mục 29","Không tự ý sử dụng thiết bị khi chưa được phép.","tự ý sử dụng thiết bị được phép"],
+["Những việc không được làm","Mục 30","Không xâm phạm phẩm chất, danh dự, thân thể người khác.","xâm phạm phẩm chất danh dự thân thể"],
+["Những việc không được làm","Mục 31","Không gian lận trong kiểm tra, thi cử.","gian lận kiểm tra thi cử quay cóp"],
+["Những việc không được làm","Mục 32","Không sử dụng chất gây nghiện, rượu bia, thuốc lá.","chất gây nghiện rượu bia thuốc lá"],
+["Những việc không được làm","Mục 33","Không mang vũ khí, pháo, chất cháy nổ vào trường.","vũ khí pháo chất cháy nổ"],
+["Những việc không được làm","Mục 34","Không tổ chức hoặc tham gia đánh nhau.","tổ chức tham gia đánh nhau"],
+["Những việc không được làm","Mục 35","Không tàng trữ, sử dụng tài liệu, văn hóa phẩm đồi trụy.","tàng trữ sử dụng tài liệu văn hóa phẩm đồi trụy"],
+["Những việc không được làm","Mục 36","Không tham gia mê tín dị đoan, tệ nạn xã hội.","mê tín dị đoan tệ nạn xã hội"],
+["Những việc không được làm","Mục 37","Không sử dụng điện thoại, máy tính bảng khi chưa được phép.","điện thoại máy tính bảng sử dụng chưa được phép"],
+["Những việc không được làm","Mục 38","Không mang tiền, tài sản giá trị cao đến trường.","tiền tài sản giá trị cao"],
+["Những việc không được làm","Mục 39","Không hút thuốc, uống rượu bia, cá độ, trò chơi đỏ đen.","hút thuốc uống rượu bia cá độ đỏ đen"],
+["Đánh giá – xử lý","Mục 40","Kết quả rèn luyện của học sinh được đánh giá theo rèn luyện đạo đức, ý thức học tập...","kết quả rèn luyện đánh giá đạo đức ý thức học tập"],
+["Đánh giá – xử lý","Mục 41","Vi phạm sẽ bị xử lý từ nhắc nhở đến buộc thôi học tùy theo mức độ.","vi phạm xử lý nhắc nhở buộc thôi học mức độ"],
+["Đánh giá – xử lý","Mục 42","Có thể tạm đình chỉ học tập hoặc xử lý theo pháp luật nếu cần.","tạm đình chỉ học tập pháp luật xử lý"],
+
+["Bán trú – ứng xử","Mục 1","Lễ phép với thầy cô và nhân viên trong trường; đoàn kết, giúp đỡ bạn bè; thực hiện nếp sống văn minh, lành mạnh.","bán trú ứng xử lễ phép đoàn kết giúp đỡ văn minh lành mạnh"],
+["Bán trú – trật tự","Mục 1","Giữ gìn trật tự, không la hét, gây ồn ào, ẩu đả.","bán trú trật tự la hét ồn ào ẩu đả"],
+["Bán trú – phòng","Mục 2","Học sinh chuẩn bị phòng bán trú theo phân công của giáo viên quản lý.","chuẩn bị phòng bán trú phân công giáo viên"],
+["Bán trú – phòng","Mục 2","Học sinh nam không được vào phòng nghỉ của học sinh nữ và ngược lại.","nam vào phòng nữ nữ vào phòng nam"],
+["Bán trú – phòng","Mục 2","Khi sang phòng khác phải được sự đồng ý của giáo viên quản lý.","sang phòng khác đồng ý giáo viên quản lý"],
+["Bán trú – phòng","Mục 2","Không sử dụng đồ dùng cá nhân của người khác khi chưa được phép.","đồ dùng cá nhân người khác chưa được phép"],
+["Bán trú – phòng","Mục 2","Không mang thức ăn, đồ uống vào phòng bán trú.","thức ăn đồ uống phòng bán trú"],
+["Bán trú – tài sản","Mục 3","Bảo vệ tài sản nhà trường, nếu làm hư hỏng phải bồi thường.","bán trú tài sản hư hỏng bồi thường"],
+["Bán trú – tài sản","Mục 3","Tự bảo quản vật dụng cá nhân, sử dụng điện thoại đúng thời gian quy định.","bán trú vật dụng cá nhân điện thoại thời gian"],
+["Bán trú – an toàn","Mục 3","Có ý thức tiết kiệm điện, nước và phòng chống cháy nổ. Phát hiện sự cố phải báo ngay với giáo viên hoặc bảo vệ.","bán trú điện nước cháy nổ sự cố giáo viên bảo vệ"],
+["Bán trú – vệ sinh","Mục 3","Giữ gìn vệ sinh chung trong khu vực bán trú.","bán trú vệ sinh"],
+["Bán trú – cấm","Mục 4","Cấm mang chất cháy nổ, hung khí, chất kích thích, thuốc lá, bật lửa, rượu bia, văn hóa phẩm đồi trụy vào khu bán trú.","bán trú chất cháy nổ hung khí chất kích thích thuốc lá bật lửa rượu bia"],
+["Bán trú – cấm","Mục 4","Cấm tham gia cá độ, cờ bạc dưới mọi hình thức.","bán trú cá độ cờ bạc"],
+["Bán trú – cấm","Mục 4","Không được có mùi bia, rượu khi vào trường, kể cả khi có phụ huynh đi cùng.","bán trú mùi bia rượu phụ huynh"],
+["Bán trú – cấm","Mục 4","Không được ra khỏi trường khi chưa có Giấy ra cổng do bộ phận quản lý bán trú cấp.","bán trú ra khỏi trường giấy ra cổng"],
+["Bán trú – sức khỏe","Mục 5","Đến giờ học, tất cả học sinh phải lên lớp. Nếu bệnh thông thường, phải báo giáo viên quản lý bán trú để được đưa đến phòng y tế.","bán trú giờ học lên lớp bệnh phòng y tế"],
+["Bán trú – đăng ký","Mục 5","Muốn đăng ký hoặc rút khỏi danh sách bán trú phải có đơn, ý kiến phụ huynh và được lãnh đạo trường phê duyệt.","đăng ký rút bán trú đơn phụ huynh phê duyệt"],
+["Bán trú – ăn","Mục 6","Ăn trưa tại căn tin theo đúng vị trí đã được sắp xếp: từ 11 giờ 00 đến 11 giờ 30.","bán trú ăn trưa căn tin 11 giờ 11h30"],
+["Bán trú – nghỉ","Mục 6","Nghỉ trưa theo đúng phòng bán trú đã được thông báo: từ 11 giờ 30 đến 13 giờ 00.","bán trú nghỉ trưa phòng 11h30 13h"],
+["Bán trú – thời gian","Mục 6","Thực hiện đúng tác phong và về lớp học theo thời khóa biểu.","bán trú về lớp thời khóa biểu tác phong"],
+
+["Nhà vệ sinh nam","Mục 1","Không đi giày, dép lên bồn cầu; luôn xả nước sau khi sử dụng.","nhà vệ sinh nam bồn cầu giày dép xả nước"],
+["Nhà vệ sinh nam","Mục 1","Sử dụng giấy vệ sinh, nước, xà phòng đúng cách, tiết kiệm.","nhà vệ sinh nam giấy nước xà phòng tiết kiệm"],
+["Nhà vệ sinh nam","Mục 1","Bỏ rác vào đúng thùng rác có nắp đậy; không vứt rác vào bồn cầu hoặc bồn rửa tay.","nhà vệ sinh nam rác thùng bồn cầu bồn rửa"],
+["Nhà vệ sinh nam","Mục 1","Tránh làm ướt sàn để phòng ngừa trơn trượt, té ngã.","nhà vệ sinh nam sàn ướt trơn trượt"],
+["Nhà vệ sinh nam","Mục 2","Không hút thuốc lá hoặc thuốc lá điện tử trong nhà vệ sinh.","nhà vệ sinh nam hút thuốc thuốc lá điện tử"],
+["Nhà vệ sinh nam","Mục 2","Không viết, vẽ, khắc lên tường, cửa, bồn vệ sinh.","nhà vệ sinh nam viết vẽ khắc tường cửa"],
+["Nhà vệ sinh nam","Mục 2","Không tụ tập nói chuyện, cười đùa lớn tiếng hoặc gây mất trật tự.","nhà vệ sinh nam tụ tập nói chuyện cười đùa mất trật tự"],
+["Nhà vệ sinh nam","Mục 2","Không nghịch phá, tháo gỡ hoặc làm hư hỏng các thiết bị vệ sinh.","nhà vệ sinh nam thiết bị nghịch phá hư hỏng"],
+["Nhà vệ sinh nam","Mục 2","Không tiểu tiện vào tường, cửa hoặc khu vực không đúng chức năng.","nhà vệ sinh nam tiểu tiện tường cửa"],
+
+["Nhà vệ sinh nữ","Mục 1","Không đi giày, dép lên bồn cầu; luôn xả nước sau khi sử dụng.","nhà vệ sinh nữ bồn cầu giày dép xả nước"],
+["Nhà vệ sinh nữ","Mục 1","Sử dụng giấy vệ sinh, nước, xà phòng đúng cách, tiết kiệm.","nhà vệ sinh nữ giấy nước xà phòng tiết kiệm"],
+["Nhà vệ sinh nữ","Mục 1","Bỏ rác vào đúng thùng rác có nắp đậy; không vứt giấy, băng vệ sinh, rác vào bồn cầu hoặc bồn rửa tay.","nhà vệ sinh nữ rác giấy băng vệ sinh thùng bồn cầu"],
+["Nhà vệ sinh nữ","Mục 1","Tránh làm ướt sàn để phòng ngừa trơn trượt, té ngã.","nhà vệ sinh nữ sàn ướt trơn trượt"],
+["Nhà vệ sinh nữ","Mục 2","Băng vệ sinh đã qua sử dụng phải được gói kín và bỏ vào thùng rác có nắp đậy.","nhà vệ sinh nữ kinh nguyệt băng vệ sinh gói kín"],
+["Nhà vệ sinh nữ","Mục 2","Không đi vệ sinh bừa bãi, không làm vấy bẩn nền nhà, tường, cửa.","nhà vệ sinh nữ vệ sinh bừa bãi vấy bẩn"],
+["Nhà vệ sinh nữ","Mục 2","Nếu sự cố ngoài ý muốn, cần thông báo ngay cho nhân viên phục vụ để được hỗ trợ.","nhà vệ sinh nữ sự cố nhân viên phục vụ"],
+["Nhà vệ sinh nữ","Mục 3","Không viết, vẽ, quẹt sơn, dán giấy lên tường, cửa nhà vệ sinh.","nhà vệ sinh nữ viết vẽ sơn dán giấy"],
+["Nhà vệ sinh nữ","Mục 3","Không tụ tập, nói chuyện hoặc cười đùa lớn tiếng trong nhà vệ sinh.","nhà vệ sinh nữ tụ tập nói chuyện cười đùa"],
+["Nhà vệ sinh nữ","Mục 3","Không nghịch phá, làm hư hỏng các thiết bị trong nhà vệ sinh.","nhà vệ sinh nữ thiết bị hư hỏng"]
+];
+
+function norm(s){
+ return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+ .replace(/đ/g,"d").replace(/[^a-z0-9\s]/g," ").replace(/\s+/g," ").trim();
+}
+const stop=new Set(["la","gi","co","khong","duoc","the","nao","thi","va","hay","cho","toi","em","hoc","sinh","trong","cua","mot","nhung","voi","neu","phai","khi","o","den","theo","ve","noi","quy","truong"]);
+
+function tokens(s){return norm(s).split(" ").filter(x=>x.length>1&&!stop.has(x))}
+function score(q,r){
+ const qt=tokens(q), rt=tokens(r[3]), qn=norm(q), rn=norm(r[2]);
+ let hit=0;
+ for(const w of qt) if(rt.includes(w)) hit+=1+(w.length>=6?.7:0);
+ // exact phrases/topics receive a boost
+ const phrases=["dien thoai","dong phuc","nghi hoc","ban tru","nha ve sinh","danh nhau","ruou bia","thuoc la","mang thai","băng vệ sinh"];
+ for(const p of phrases) if(qn.includes(norm(p))&&rn.includes(norm(p))) hit+=3;
+ return hit/(Math.sqrt(qt.length||1));
+}
+
+function getAnswer(q){
+ const nq=norm(q);
+ if(!nq)return "Bạn hãy nhập câu hỏi nhé.";
+ if(/^(xin chao|hello|chao)/.test(nq))return {text:"Xin chào! 👋 Mình có thể trả lời các câu hỏi dựa trên nội quy học sinh, bán trú và nhà vệ sinh mà bạn đã cung cấp.",src:""};
+ let arr=KB.map((r,i)=>({r,i,s:score(q,r)})).sort((a,b)=>b.s-a.s);
+ // Return several related rules when the question is broad.
+ const top=arr[0];
+ if(top.s<0.55){
+   if(nq.includes("noi quy")) return {text:"Tài liệu có 3 nhóm nội dung chính: nội quy học sinh (42 mục), nội quy học sinh bán trú và nội quy sử dụng nhà vệ sinh nam/nữ. Bạn hãy hỏi cụ thể vấn đề muốn tra cứu.",src:""};
+   return {text:"Mình chưa xác định được quy định phù hợp trong tài liệu. Bạn có thể hỏi cụ thể hơn, ví dụ: “Có được dùng điện thoại không?”, “Nghỉ học phải làm gì?”, “Bán trú có được ra ngoài không?”",src:""};
+ }
+ const related=arr.filter(x=>x.s>=Math.max(top.s*.78,.72)).slice(0,5);
+ let text=related.map((x,i)=>`${i+1}. ${x.r[2]}`).join("\n");
+ let src=related.map(x=>`${x.r[0]} – ${x.r[1]}`).join("; ");
+ return {text,src};
+}
+function add(text,who,src=""){
+ const row=document.createElement("div");row.className="msg "+who;
+ const b=document.createElement("div");b.className="bubble";b.textContent=text;
+ if(src){const s=document.createElement("div");s.className="sources";s.textContent="Nguồn: "+src;b.appendChild(s)}
+ row.appendChild(b);document.getElementById("chat").appendChild(row);
+ document.getElementById("chat").scrollTop=999999;
+}
+function ask(q){add(q,"user");setTimeout(()=>{let a=getAnswer(q);add(a.text,"bot",a.src)},100)}
+function send(){const i=document.getElementById("q");const q=i.value.trim();if(q){i.value="";ask(q)}}
+add("Xin chào! 👋\nMình là Trợ lý Nội quy THPT Lê Thánh Tôn.\n\nBạn có thể hỏi bằng cách nói tự nhiên, ví dụ:\n• “Em nghỉ 3 ngày liên tục thì cần gì?”\n• “Có được đem điện thoại vào trường không?”\n• “Nam có được vào phòng nữ khi bán trú không?”\n• “Băng vệ sinh phải bỏ ở đâu?”\n\nMình sẽ tra trong toàn bộ nội dung nội quy đã được cung cấp.","bot");
+</script>
+</body>
+</html>
