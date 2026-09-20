@@ -145,19 +145,49 @@ function score(q,r){
 
 function getAnswer(q){
  const nq=norm(q);
- if(!nq)return "Bạn hãy nhập câu hỏi nhé.";
- if(/^(xin chao|hello|chao)/.test(nq))return {text:"Xin chào! 👋 Mình có thể trả lời các câu hỏi dựa trên nội quy học sinh, bán trú và nhà vệ sinh mà bạn đã cung cấp.",src:""};
- let arr=KB.map((r,i)=>({r,i,s:score(q,r)})).sort((a,b)=>b.s-a.s);
- // Return several related rules when the question is broad.
+
+ if(!nq)
+   return "Bạn hãy nhập câu hỏi nhé.";
+
+ if(/^(xin chao|hello|chao)/.test(nq))
+   return {
+     text:"Xin chào! 👋 Mình có thể trả lời các câu hỏi dựa trên nội quy học sinh, bán trú và nhà vệ sinh mà bạn đã cung cấp.",
+     src:""
+   };
+
+ let arr=KB.map((r,i)=>({
+   r,
+   i,
+   s:score(q,r)
+ })).sort((a,b)=>b.s-a.s);
+
  const top=arr[0];
- if(top.s<0.55){
-   if(nq.includes("noi quy")) return {text:"Tài liệu có 3 nhóm nội dung chính: nội quy học sinh (42 mục), nội quy học sinh bán trú và nội quy sử dụng nhà vệ sinh nam/nữ. Bạn hãy hỏi cụ thể vấn đề muốn tra cứu.",src:""};
-   return {text:"Mình chưa xác định được quy định phù hợp trong tài liệu. Bạn có thể hỏi cụ thể hơn, ví dụ: “Có được dùng điện thoại không?”, “Nghỉ học phải làm gì?”, “Bán trú có được ra ngoài không?”",src:""};
+
+ // KHÔNG TÌM THẤY
+ if(!top || top.s < 0.75){
+   return {
+     text:"❌ Không tìm thấy thông tin phù hợp trong nội quy được cung cấp.\n\nBạn hãy thử hỏi cụ thể hơn hoặc sử dụng các câu hỏi như:\n• Học sinh có được dùng điện thoại không?\n• Nghỉ học 3 ngày cần làm gì?\n• Quy định về đồng phục là gì?\n• Bán trú có được ra khỏi trường không?\n• Nhà vệ sinh có những quy định gì?",
+     src:""
+   };
  }
- const related=arr.filter(x=>x.s>=Math.max(top.s*.78,.72)).slice(0,5);
- let text=related.map((x,i)=>`${i+1}. ${x.r[2]}`).join("\n");
- let src=related.map(x=>`${x.r[0]} – ${x.r[1]}`).join("; ");
- return {text,src};
+
+ // Tìm thấy
+ const related=arr
+   .filter(x=>x.s>=Math.max(top.s*0.78,0.75))
+   .slice(0,5);
+
+ let text=related
+   .map((x,i)=>`${i+1}. ${x.r[2]}`)
+   .join("\n");
+
+ let src=related
+   .map(x=>`${x.r[0]} – ${x.r[1]}`)
+   .join("; ");
+
+ return {
+   text,
+   src
+ };
 }
 function add(text,who,src=""){
  const row=document.createElement("div");row.className="msg "+who;
